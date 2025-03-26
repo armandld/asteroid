@@ -1,16 +1,15 @@
-tFin = 63072000 
+tFin = 63072000
 msol = 1.98892e30
-mjup = 5.9736e24
+mjup = 0
 msat = 1
 a = 149598023e3
-adapt = false
-tol = 30
-output = output.out
-nsteps = 3000000
+adapt = False
+tol = 1e-11
+nsteps = 300000
 sampling = 1
-nsel_physics=2
+nsel_physics = 2
 m1 = 1.98892e30
 m2 = 5.9736e24
-
+output = Ex3.txt
 
 5.9736e24

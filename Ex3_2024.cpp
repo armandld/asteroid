@@ -170,9 +170,8 @@ public:
 			++count_steps;
             printOut(false);
         }
-    }
-    else{ 				// adaptation de dt
-      while (t<tFin) {
+    }else{ 				// adaptation de dt
+      while (t<=tFin) {
 		  dt=min(dt,tFin-t);
 		  ++count_steps;
 		  y1=RK4_do_onestep(y,t,dt);
@@ -189,19 +188,16 @@ public:
 			  }
 		  else {
 			  while (d>tol) {
-				  dt*=f*pow(d/tol,0.2);
-				  
-				  y1=RK4_do_onestep(y,t,dt);
+				  dt*=f*pow(d/tol,0.2);			  
+				  std::valarray<double>y_a=RK4_do_onestep(y,t,dt);
 				  std::valarray<double>y_temp=RK4_do_onestep(y,t,0.5*dt);
-			      y2=RK4_do_onestep(y_temp,t+0.5*dt,0.5*dt);
-			      d = sqrt(pow(y1[0] - y2[0], 2) + pow(y1[1] - y2[1], 2));
-
-				  dt *= f * pow(tol / d, 0.2); // if n=4, 1/(n+1) = 0.2
+			      std::valarray<double>y_b=RK4_do_onestep(y_temp,t+0.5*dt,0.5*dt);
+			      d = sqrt(pow(y_a[0] - y_b[0], 2) + pow(y_a[1] - y_b[1], 2));			  
 			  }
 			  y=y2;
 			  t+=dt;
 			  printOut(false);
-		  } //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
+		  }
 	  }
     };
     
