@@ -23,9 +23,9 @@ private:
   bool adapt;
   double alpha = 0e0;
   double beta = 0e0;
-  double tol= 0.1;
+  double tol= 30;
   double f=0.99;
-  int count_steps=0;
+  int count_steps=1;
   valarray<double> y0 = std::valarray<double>(0.e0, 4); // Correctly initialized
   valarray<double> y  = std::valarray<double>(0.e0, 4); // Correctly initialized
   ofstream *outputFile;
@@ -56,7 +56,6 @@ private:
 			
 		double dist_s_s = dist_s(xs);
 		double dist_s_j = dist_s(xj);
-		double Om=sqrt(GM * (msol + mjup) / (a * a * a)); // Test jsp si ca marche
 		
 		xbis[2] = - pow(Om, 2) * (pow(a,3)*beta*(x[0]+alpha*a)/pow(dist_s_s,3)
 								 + pow(a,3)*alpha*(x[0]-beta*a)/pow(dist_s_j,3)
@@ -194,6 +193,9 @@ public:
 				  y1=RK4_do_onestep(y,t,dt);
 				  std::valarray<double>y_temp=RK4_do_onestep(y,t,0.5*dt);
 			      y2=RK4_do_onestep(y_temp,t+0.5*dt,0.5*dt);
+			      d = sqrt(pow(y1[0] - y2[0], 2) + pow(y1[1] - y2[1], 2));
+
+				  dt *= f * pow(tol / d, 0.2); // n=4 pour RK4
 			  }
 			  y=y2;
 			  t+=dt;
