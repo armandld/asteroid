@@ -12,30 +12,33 @@ class Exercice3
 
 private:
   double t, dt, tFin;
-  double r0, r1, v0, a;
+  double a;
   double GM=6.674e-11;
-  double mtot=0e0;
-  double L2x,L2y;
-  valarray<double> m = std::valarray<double>(0.e0, 2);
-  int N_excit, nsteps;
-  int sampling;
+  double msol, mjup, msat;
+  double mtot;
+  double Om;
+  double xs,xj;
+  int nsteps;
   int last;
-  int  nsel_physics;
   bool adapt;
   double alpha = 0e0;
   double beta = 0e0;
-  double tol= 0e0;
-  valarray<double> x0 = std::valarray<double>(0.e0, 4); // Correctly initialized
-  valarray<double> x  = std::valarray<double>(0.e0, 4); // Correctly initialized
+  double tol= 0.1;
+  double f=0.99;
+  int count_steps=0;
+  valarray<double> y0 = std::valarray<double>(0.e0, 4); // Correctly initialized
+  valarray<double> y  = std::valarray<double>(0.e0, 4); // Correctly initialized
   ofstream *outputFile;
+  
+  int sampling;  // Nombre de pas de temps entre chaque ecriture des diagnostics
 
   void printOut(bool write)
   {
     if((!write && last>=sampling) || (write && last!=1))
     {
-      double Energy = compute_energy(x[0],x[1],x[2],x[3]);
-      *outputFile << t << " "<< x[0] << " " << x[1] << " "<< x[2] << " " << x[3] << " " \
-      << Energy<< " "<< nsteps<< endl; // write output on file
+      double Energy = compute_energy(y[0],y[1],y[2],y[3]);
+      *outputFile << count_steps << " " << t << " " << y[0] << " " << y[1] << " "<< y[2] << " " << y[3] << " " \
+      << Energy<< " "<< endl; // write output on file
       last = 1;
     }
     else
@@ -43,59 +46,59 @@ private:
       last++;
     }
   }
-
-  std::valarray<double> get_f(double t, const std::valarray<double>& x) {
-    std::valarray<double> xdot(0.0, 4);
+  
+  double dist_s(double x) const {return sqrt(pow(y[0]-x,2)+pow(y[1],2));}
+  
+  std::valarray<double> get_f(const std::valarray<double>& x, double t) {
+    std::valarray<double> xbis(0.0, 4);
     //TO DO
-    if (nsel_physics == 1) {
-      
-        xdot[2] =0;
-        xdot[3] = 0;
-    }
-    else if (nsel_physics == 2) {
+    if (mjup != 0) {
+			
+		double dist_s_s = dist_s(xs);
+		double dist_s_j = dist_s(xj);
+		double Om=sqrt(GM * (msol + mjup) / (a * a * a)); // Test jsp si ca marche
+		
+		xbis[2] = - pow(Om, 2) * (pow(a,3)*beta*(x[0]+alpha*a)/pow(dist_s_s,3)
+								 + pow(a,3)*alpha*(x[0]-beta*a)/pow(dist_s_j,3)
+								 - x[0])
+				   + 2 * Om * x[3];
 
-        
-                 
-        xdot[2] = 0;
-        xdot[3] =  0;
-    }
-    else{
-        cerr << "No dynamics corresponds to this index" << endl;
-        return xdot;
-    }
+		xbis[3] = - pow(Om, 2) * (pow(a,3)*beta*x[1]/pow(dist_s_s,3)
+								 + pow(a,3)*alpha*x[1]/pow(dist_s_j,3)
+								 - x[1])
+				   - 2 * Om * x[2];
+	} else {
+		xbis[2] = - GM * msol  * x[0] / pow(dist_s(xs),3);
+		xbis[3] = - GM * msol * x[1] / pow(dist_s(xs), 3);
+	}
+//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
     // Velocities
-    xdot[0] = 0;
-    xdot[1] = 0;
+    xbis[0] = x[2];
+    xbis[1] = x[3];
 
-    return xdot;
+    return xbis;
   }  
-
-
-// Function to compute potential energy per mass in R (nsel_physics=1) or in R'(nsel_physics=2)
-double get_Epot(double xx, double yy) {
-    //TO DO
-    return 0;
-}
 
 // Function to compute mechanical energy per mass in R'
 double compute_energy(double xx, double yy, double vx, double vy) {
-    //TO DO
-    return 0;
-}
-void initial_condition(void){
-  if(nsel_physics==1){
-    //TO DO initialize x0
-  }
-  else{
-    //TO DO initialize x0
-  }
+	
+	double dist_s_s = dist_s(xs);
+    double dist_s_j = (mjup != 0) ? dist_s(xj) : 0;
+	
+    return 0.5*msat*(vx*vx + vy*vy) // Energie cinétique
+		   - GM * msat * msol / dist_s_s // Énergie potentielle gravitationnelle Soleil
+		   - GM * msat * mjup / dist_s_j // Énergie potentielle gravitationnelle Jupiter
+		   - 0.5 * msat * Om * Om * (xx*xx + yy*yy); // Énergie potentielle centrifuge
 }
 
 std::valarray<double> RK4_do_onestep(const std::valarray<double>& yold, double ti, double dt) {
     std::valarray<double> k1, k2, k3, k4, ynew;
-    //TO DO
-    ynew=yold;
+	k1=dt*get_f(yold,ti);
+	k2=dt*get_f(yold+0.5*k1,ti+0.5*dt);
+	k3=dt*get_f(yold+0.5*k2,ti+0.5*dt);
+	k4=dt*get_f(yold+k3,ti+dt);
+    ynew=yold+(k1+2.0*k2+2.0*k3+k4)/6.0;
     return ynew;
 }
 
@@ -103,8 +106,7 @@ std::valarray<double> RK4_do_onestep(const std::valarray<double>& yold, double t
 public:
   Exercice3(int argc, char* argv[])
   {
-    const double pi=3.1415926535897932384626433832795028841971e0;
-    string inputPath("configuration.in"); // Fichier d'input par defaut
+    string inputPath("configuration.in.example"); // Fichier d'input par defaut
     if(argc>1) // Fichier d'input specifie par l'utilisateur ("./Exercice3 config_perso.in")
       inputPath = argv[1];
 
@@ -114,29 +116,22 @@ public:
       configFile.process(argv[i]);
 
     tFin         = configFile.get<double>("tFin");            // t final (overwritten if N_excit >0)
-  //  dt       = configFile.get<double>("dt");            // time step (overwritten if nsteps_per >0)
-    m[0]         = configFile.get<double>("m1");              // mass of the sun
-    m[1]         = configFile.get<double>("m2");              // mass of the earth
-    r0           = configFile.get<double>("r0");              // r0
-    r1           = configFile.get<double>("r1");              // r1
-    L2x          = configFile.get<double>("L2x");              // L2x
-    L2y          = configFile.get<double>("L2y");              // L2y
-    a            = configFile.get<double>("a");               // demi grand-axe (solei-terre hyp MCU)
-    nsel_physics = configFile.get<int>("nsel_physics");       //1) one body problem around mass#2 or 2) one body in rotating reference frame of {1,2}
+    msol         = configFile.get<double>("msol");              // mass of the sun
+    mjup         = configFile.get<double>("mjup");              // mass of the earth
+    msat         = configFile.get<double>("msat");              // mass of the satellite
+    a            = configFile.get<double>("a");               // distance sol jup
     adapt        = configFile.get<bool>("adapt");             //if 1=true -> adaptive dt, if 0=false -> fixed dt
     tol          = configFile.get<double>("tol");             //tolerance of the adaptive scheme
-    sampling     = configFile.get<int>("sampling");     // number of time steps between two writings on file
     nsteps       = configFile.get<int>("nsteps");        // number of time step per period
-    mtot=m[0]+m[1];
-    alpha = m[1] / mtot;
-    beta = m[0] / mtot;
+    sampling = configFile.get<unsigned int>("sampling",sampling);
+    mtot=msol+mjup;
+    alpha = mjup / mtot;
+    beta = msol / mtot;
     //TO DO
     
     // Ouverture du fichier de sortie
     outputFile = new ofstream(configFile.get<string>("output").c_str());
     outputFile->precision(15);
-    //TO DO initialize tFin for nsel_physics=1 and initialize dt for both nsel_physics
-    dt=tFin/nsteps;
   }
 
   ~Exercice3()
@@ -147,22 +142,68 @@ public:
 
   void run()
   {
-    t = 0.;
-    initial_condition();
-    x=x0;
+    t = 0.e0;
+
+    y[0]=2.0*a;
+    y[1]=0.0;
+    y[2]=-11000; 
+    y[3]=2000;
+    
+    if (mjup!=0){
+		Om = sqrt(GM *  (msol+mjup) / pow(a,3));
+		xs = a*alpha;
+		xj = -a*beta;
+	}else{
+		Om=0;
+		xs=0;
+	}
+    
     last = 0;
     printOut(true);
-    std::valarray<double> y1;
-    std::valarray<double> y2;
-    if (adapt==false){
-      //To DO fixed dt scheme
+    
+    std::valarray<double> y1, y2;
+    
+    if (!adapt){ //Pas d'adaptation de dt
+      for (int i = 0; i < nsteps; i++) {
+            y = RK4_do_onestep(y, t, dt);
+            t += dt;
+            printOut(false);
+        }
     }
-    else{
-      //TO DO adaptive case
+    else{ 				// adaptation de dt
+	  dt=tFin/nsteps;
+      while (t<tFin) {
+		  dt=min(dt,tFin-t);
+		  ++count_steps;
+		  y1=RK4_do_onestep(y,t,dt);
+		  
+		  std::valarray<double> y_inter=RK4_do_onestep(y,t,0.5*dt);
+		  y2=RK4_do_onestep(y_inter,t+0.5*dt,0.5*dt);
+		  
+		  double d=sqrt(pow(y1[0] - y2[0], 2) + pow(y1[1] - y2[1], 2));
+		  if (d<=tol){
+			  y=y2;
+			  t+=dt;
+			  dt*=pow(tol/d,0.2); // if n=4, 1/(n+1) = 0.2
+			  printOut(false);
+			  }
+		  else {
+			  while (d>tol) {
+				  dt*=f*pow(d/tol,0.2);
+				  
+				  y1=RK4_do_onestep(y,t,dt);
+				  std::valarray<double>y_temp=RK4_do_onestep(y,t,0.5*dt);
+			      y2=RK4_do_onestep(y_temp,t+0.5*dt,0.5*dt);
+			  }
+			  y=y2;
+			  t+=dt;
+			  printOut(false);
+		  } //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
+	  }
     };
     
     printOut(true); // ecrire le dernier pas de temps
-  };
+  }
 
 };
 
