@@ -84,11 +84,12 @@ double compute_energy(double xx, double yy, double vx, double vy) {
 	
 	double dist_s_s = dist_s(xs);
     double dist_s_j = (mjup != 0) ? dist_s(xj) : 0;
+	double energy = 0.5*msat*(vx*vx + vy*vy) // Energie cinétique
+					- GM * msat * msol / dist_s_s // Énergie potentielle gravitationnelle Soleil;
+					- 0.5 * msat * Om * Om * (xx*xx + yy*yy); // Énergie potentielle centrifuge
 	
-    return 0.5*msat*(vx*vx + vy*vy) // Energie cinétique
-		   - GM * msat * msol / dist_s_s // Énergie potentielle gravitationnelle Soleil
-		   - GM * msat * mjup / dist_s_j // Énergie potentielle gravitationnelle Jupiter
-		   - 0.5 * msat * Om * Om * (xx*xx + yy*yy); // Énergie potentielle centrifuge
+    if (mjup!=0) {energy += - GM * msat * mjup / dist_s_j;} // Énergie potentielle gravitationnelle Jupiter}
+    return energy;
 }
 
 std::valarray<double> RK4_do_onestep(const std::valarray<double>& yold, double ti, double dt) {
@@ -161,16 +162,16 @@ public:
     printOut(true);
     
     std::valarray<double> y1, y2;
-    
+    dt=tFin/nsteps;
     if (!adapt){ //Pas d'adaptation de dt
       for (int i = 0; i < nsteps; i++) {
             y = RK4_do_onestep(y, t, dt);
             t += dt;
+			++count_steps;
             printOut(false);
         }
     }
     else{ 				// adaptation de dt
-	  dt=tFin/nsteps;
       while (t<tFin) {
 		  dt=min(dt,tFin-t);
 		  ++count_steps;
@@ -195,7 +196,7 @@ public:
 			      y2=RK4_do_onestep(y_temp,t+0.5*dt,0.5*dt);
 			      d = sqrt(pow(y1[0] - y2[0], 2) + pow(y1[1] - y2[1], 2));
 
-				  dt *= f * pow(tol / d, 0.2); // n=4 pour RK4
+				  dt *= f * pow(tol / d, 0.2); // if n=4, 1/(n+1) = 0.2
 			  }
 			  y=y2;
 			  t+=dt;
