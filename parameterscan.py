@@ -6,8 +6,8 @@ import os
 
 # Parameters
 # TODO adapt to what you need (folder path executable input filename)
-executable = 'Ex3_2024'  # Name of the executable (NB: .exe extension is required on Windows)
-repertoire = r"/Users/Sayu/Desktop/asteroid"
+executable = 'Ex3_2025'  # Name of the executable (NB: .exe extension is required on Windows)
+repertoire = r"/home/chatelin/Desktop/MyFiles/Asteroide_Jupiter_physNum"
 os.chdir(repertoire)
 
 
@@ -55,14 +55,14 @@ def ecrire_configuration(nouvelles_valeurs):
         fichier.writelines(lignes_modifiees)
 
 
-tFin = 63072000 
+tFin = 3153600000
 msol = 1.98892e30
-mjup = 5.9736e24
+mjup = 0
 msat = 1
-a = 149598023e3
-adapt = True
-tol = 30
-nsteps = 3000000
+a = 778.479e9
+adapt = False
+tol = 1
+nsteps = 100000
 sampling = 1
 nsel_physics=2
 m1 = 1.98892e30
@@ -96,17 +96,19 @@ def lancer_simulation(theta0, output_file):
     cmd = f"./{executable} {input_filename} output={output_file}"
     subprocess.run(cmd, shell=True)
 
-adapt = [True, False]  # Nombre de pas par période
+adapt = [True]  # Nombre de pas par période
 
 paramstr = 'adapt'  # Paramètre à scanner
 param = adapt
 
 
 # Question 1
-ecrire_valeur("adapt",True)
-ecrire_valeur("nsteps",300000)
-ecrire_valeur("mjup",0)
-ecrire_valeur("tol",1e-11)
+ecrire_valeur("adapt",0)
+#ecrire_valeur("nsteps",30000)
+ecrire_valeur("mjup",5.9736e24)
+ecrire_valeur("tol",0.1)
+
+##5.9736e24
 
 xjup = a*msol/(msol-mjup)
 xsol = a - xjup
@@ -123,13 +125,13 @@ for i, adapt in enumerate(param):
 
     # Chargement des données
     data = np.loadtxt(output_file)
-    #t = data[:, 0]
-    #countsteps = data[:,1]
+    t = data[:, 1]
+    countsteps = data[:,0]
     x = data[:, 2]
     y = data[:, 3]
     #vx = data[:, 4]
     #vy = data[:, 5]
-    #E = data[:, 6]
+    E = data[:, 6]
     coul = "blue"
     sun = plt.Circle((xsol, 0), 696340000, color='red')
     jupiter = plt.Circle((xjup, 0), 1737100, color='orange')
@@ -150,5 +152,16 @@ plt.ylabel("y [m]")
 plt.grid(True, linestyle="--", alpha=0.3)
 plt.legend()
 plt.title("Trajectoire")
+plt.show()
+
+
+# **Tracé de l'énergie mécanique en fonction du temps**
+plt.figure()
+plt.plot(t, E, color='green', linestyle='-', label="Énergie mécanique")
+plt.xlabel("Temps [s]")
+plt.ylabel("Énergie mécanique [J]")
+plt.title("Évolution de l'énergie mécanique")
+plt.legend()
+plt.grid(True, linestyle="--", alpha=0.3)
 
 plt.show()
