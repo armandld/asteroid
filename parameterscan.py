@@ -97,8 +97,6 @@ def lancer_simulation(theta0, output_file):
 
 adapt = [0,1]  # Nombre de pas par période
 
-adapt = [True]  # Nombre de pas par période
-
 paramstr = 'adapt'  # Paramètre à scanner
 param = adapt
 
@@ -228,7 +226,7 @@ plt.title("Énergie")
 
 
 ecrire_valeur("adapt",1)
-tol = [10,1e-1,1e-2,1e-3]  # Nombre de pas par période
+tol=[1e7, 1e6, 1e5, 1e4,1e3, 1e2, 1e1, 1e0, 1e-1,1e-2]  # Nombre de pas par période
 
 paramstr = 'tol'  # Paramètre à scanner
 param = tol
@@ -260,11 +258,52 @@ for i, tol0 in enumerate(param):
     j.append(len(t))
     # Solution analytique
 # Tracé de l'étude de convergence
-plt.plot(j, K,color = coul,linestyle=q)
+plt.loglog(j, K,color = coul,linestyle=q)
 plt.xlabel("nsteps")
 plt.ylabel("$\\Delta E$ [J]")
 plt.grid(True, linestyle="--", alpha=0.3)
 plt.legend()
-plt.title("Énergie")
+plt.title("Convergence énergie")
+
+
+tol=[1e2, 1e1, 1e0, 1e-1,1e-2]  # Nombre de pas par période
+
+l = []
+K = []
+j = []
+plt.figure()
+ax = plt.gca()
+for i, tol0 in enumerate(param):
+    output_file = f"{paramstr}={tol0}.out"
+    outputs.append(output_file)
+    cmd = f"./{executable} {input_filename} {paramstr}={tol0} output={output_file}"
+    print(cmd)
+    subprocess.run(cmd, shell=True)
+    print('Simulation terminée.')
+
+    # Chargement des données
+    data = np.loadtxt(output_file)
+    t = data[:, 0]
+    x = data[:,1]
+    y = data[:,2]
+    r = x[-1]
+    E = data[:, 5]
+    coul = "blue"
+    q = '-'
+    if (adapt == True):
+        coul = "red"
+    K.append(r)
+
+    j.append(len(t))
+    # Solution analytique
+# Tracé de l'étude de convergence
+j = np.array(j)
+j = 1/j
+plt.loglog(j, K,color = coul,linestyle=q)
+plt.xlabel("nsteps")
+plt.ylabel("$\\Delta x$ [J]")
+plt.grid(True, linestyle="--", alpha=0.3)
+plt.legend()
+plt.title("Convergence position finale")
 
 plt.show()
