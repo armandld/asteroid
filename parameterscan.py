@@ -6,7 +6,7 @@ import os
 
 # Parameters
 # TODO adapt to what you need (folder path executable input filename)
-executable = 'Ex3_2024'  # Name of the executable (NB: .exe extension is required on Windows)
+executable = 'Ex3_2025'  # Name of the executable (NB: .exe extension is required on Windows)
 repertoire = r"/Users/Sayu/Desktop/asteroid"
 os.chdir(repertoire)
 
@@ -55,23 +55,21 @@ def ecrire_configuration(nouvelles_valeurs):
         fichier.writelines(lignes_modifiees)
 
 
-tFin = 63072000 
+tFin = 3153600000
 msol = 1.98892e30
-mjup = 5.9736e24
+mjup = 0
 msat = 1
-a = 149598023e3
-adapt = True
-tol = 30
-nsteps = 3000000
+a = 778.479e9
+adapt = 1
+tol = 1
+nsteps = 300000
 sampling = 1
-nsel_physics=2
-m1 = 1.98892e30
-m2 = 5.9736e24
+nsel_physics = 1
 
 valeurs = lire_configuration()
 
 def actualise_valeur():
-    global tFin, msol, mjup, msat, a, adapt, tol, output, nsteps, sampling, nsel_physics, m1, m2
+    global tFin, msol, mjup, msat, a, adapt, tol, nsteps, sampling, nsel_physics
     tFin = float(valeurs.get("tFin"))
     msol = float(valeurs.get("msol"))
     mjup = float(valeurs.get("mjup"))
@@ -81,9 +79,8 @@ def actualise_valeur():
     tol = float(valeurs.get("tol"))
     nsteps = float(valeurs.get("nsteps"))
     sampling = float(valeurs.get("sampling"))
-    nsel_physics = float(valeurs.get("nsel_physics"))
-    m1 = float(valeurs.get("m1"))
-    m2 = float(valeurs.get("m2"))
+    nsel_physics = int(valeurs.get("nsel_physics"))
+
 
 def ecrire_valeur(nom,valeur):
     global valeurs
@@ -96,20 +93,21 @@ def lancer_simulation(theta0, output_file):
     cmd = f"./{executable} {input_filename} output={output_file}"
     subprocess.run(cmd, shell=True)
 
-adapt = [True, False]  # Nombre de pas par période
+adapt = [0,1]  # Nombre de pas par période
 
 paramstr = 'adapt'  # Paramètre à scanner
 param = adapt
 
 
 # Question 1
-ecrire_valeur("adapt",True)
-ecrire_valeur("nsteps",300000)
-ecrire_valeur("mjup",0)
-ecrire_valeur("tol",1e-11)
+#ecrire_valeur("adapt",True)
+#ecrire_valeur("nsteps",300000)
+#ecrire_valeur("mjup",0)
+#ecrire_valeur("tol",1e4)
 
 xjup = a*msol/(msol-mjup)
 xsol = a - xjup
+
 l = []
 plt.figure()
 ax = plt.gca()
@@ -123,22 +121,25 @@ for i, adapt in enumerate(param):
 
     # Chargement des données
     data = np.loadtxt(output_file)
-    #t = data[:, 0]
+    t = data[:, 0]
     #countsteps = data[:,1]
-    x = data[:, 2]
-    y = data[:, 3]
-    #vx = data[:, 4]
-    #vy = data[:, 5]
-    #E = data[:, 6]
+    x = data[:, 1]
+    y = data[:, 2]
+    vx = data[:, 3]
+    vy = data[:, 4]
+    E = data[:, 5]
     coul = "blue"
     sun = plt.Circle((xsol, 0), 696340000, color='red')
     jupiter = plt.Circle((xjup, 0), 1737100, color='orange')
     ax.add_patch(sun)
     ax.add_patch(jupiter)
-    if (adapt == False):
+    q = '--'
+    if (adapt == True):
         coul = "red"
+        #q = '-'
+        dt = data[:, 6]
         #x = np.zeros(len(y))
-    p = plt.plot(x, y,color = coul,linestyle='-',label=f"Adapt={adapt}")
+    p = plt.plot(x, y,color = coul,linestyle=q,label=f"Adapt={adapt}")
     l.append(p)
     
     # Solution analytique
@@ -150,5 +151,79 @@ plt.ylabel("y [m]")
 plt.grid(True, linestyle="--", alpha=0.3)
 plt.legend()
 plt.title("Trajectoire")
+
+plt.figure()
+plt.xlabel("t [s]")
+plt.ylabel("E [J]")
+plt.plot(t, E,color = coul,linestyle='-',label=f"Adapt={adapt}")
+plt.title("energy")
+
+plt.figure()
+plt.xlabel("t [s]")
+plt.ylabel("d [m]")
+plt.plot(t, np.sqrt(x*x + y*y),color = coul,linestyle='-',label=f"Adapt={adapt}")
+plt.axhline(np.max(np.sqrt(x*x + y*y)), color='black', linestyle='--',  label=f"Max Distance={np.max(np.sqrt(x*x + y*y))}")
+plt.axhline(np.min(np.sqrt(x*x + y*y)), color='purple', linestyle='--', label=f"Min Distance={np.min(np.sqrt(x*x + y*y))}")
+plt.title("Distance par rapport au Soleil en fonction du temps")
+plt.legend(loc = 'center')
+
+plt.figure()
+plt.xlabel("t [s]")
+plt.ylabel("v [m/s]")
+plt.plot(t, np.sqrt(vx*vx + vy*vy),color = coul,linestyle='-',label=f"Adapt={adapt}")
+plt.axhline(np.max(np.sqrt(vx*vx + vy*vy)), color='black', linestyle='--', label=f"Max Velocity={np.max(np.sqrt(vx*vx + vy*vy))}")
+plt.axhline(np.min(np.sqrt(vx*vx + vy*vy)), color='purple', linestyle='--',label=f"Min Velocity={np.min(np.sqrt(vx*vx + vy*vy))}")
+plt.title("Vitesse en fonction du temps")
+plt.legend()
+
+plt.figure()
+plt.xlabel("t [s]")
+plt.ylabel("dt [s]")
+plt.plot(t, dt,color = coul,linestyle='-',label=f"Adapt={adapt}")
+plt.title("Pas de temps en fonction du temps")
+plt.legend()
+
+
+adapt = [1e4,3e4,1e5,3e5]  # Nombre de pas par période
+adapt = [0,1]
+paramstr = 'adapt'  # Paramètre à scanner
+param = adapt
+
+l = []
+plt.figure()
+ax = plt.gca()
+for i, adapt in enumerate(param):
+    output_file = f"{paramstr}={adapt}.out"
+    outputs.append(output_file)
+    cmd = f"./{executable} {input_filename} {paramstr}={adapt} output={output_file}"
+    print(cmd)
+    subprocess.run(cmd, shell=True)
+    print('Simulation terminée.')
+
+    # Chargement des données
+    data = np.loadtxt(output_file)
+    t = data[:, 0]
+    #countsteps = data[:,1]
+    x = data[:, 1]
+    y = data[:, 2]
+    vx = data[:, 3]
+    vy = data[:, 4]
+    E = data[:, 5]
+    coul = "blue"
+    q = '-'
+    if (adapt == True):
+        coul = "red"
+        #q = '-'
+        #x = np.zeros(len(y))
+    plt.plot(t, E,color = coul,linestyle=q,label=f"Adapt={adapt}")
+    
+    
+    # Solution analytique
+# Tracé de l'étude de convergence
+plt.xlabel("t [s]")
+plt.ylabel("E [J]")
+plt.grid(True, linestyle="--", alpha=0.3)
+plt.legend()
+plt.title("Énergie")
 
 plt.show()
