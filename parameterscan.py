@@ -8,6 +8,7 @@ import os
 # TODO adapt to what you need (folder path executable input filename)
 executable = 'Ex3_2025'  # Name of the executable (NB: .exe extension is required on Windows)
 repertoire = r"/Users/Sayu/Desktop/asteroid"
+
 os.chdir(repertoire)
 
 
@@ -93,18 +94,16 @@ def lancer_simulation(theta0, output_file):
     cmd = f"./{executable} {input_filename} output={output_file}"
     subprocess.run(cmd, shell=True)
 
+
 adapt = [0,1]  # Nombre de pas par période
+
+adapt = [True]  # Nombre de pas par période
 
 paramstr = 'adapt'  # Paramètre à scanner
 param = adapt
 
 
 # Question 1
-#ecrire_valeur("adapt",True)
-#ecrire_valeur("nsteps",300000)
-#ecrire_valeur("mjup",0)
-#ecrire_valeur("tol",1e4)
-
 xjup = a*m1/(m1-m2)
 xsol = a - xjup
 
@@ -122,12 +121,12 @@ for i, adapt in enumerate(param):
     # Chargement des données
     data = np.loadtxt(output_file)
     t = data[:, 0]
-    #countsteps = data[:,1]
     x = data[:, 1]
     y = data[:, 2]
     vx = data[:, 3]
     vy = data[:, 4]
     E = data[:, 5]
+
     coul = "blue"
     sun = plt.Circle((xsol, 0), 696340000, color='red')
     jupiter = plt.Circle((xjup, 0), 1737100, color='orange')
@@ -151,6 +150,7 @@ plt.ylabel("y [m]")
 plt.grid(True, linestyle="--", alpha=0.3)
 plt.legend()
 plt.title("Trajectoire")
+
 
 plt.figure()
 plt.xlabel("t [s]")

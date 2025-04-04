@@ -27,10 +27,41 @@ private:
     void printOut(bool write) {
         if ((!write && last >= sampling) || (write && last != 1)) {
             double Energy = compute_energy(x[0], x[1], x[2], x[3]);
-    
-            *outputFile << t << " " << x[0] << " " << x[1] << " "
+                *outputFile << t << " " << x[0] << " " << x[1] << " "
                         << x[2] << " " << x[3] << " " << Energy;
-    
+    // Ouverture du fichier de sortie
+    outputFile = new ofstream(configFile.get<string>("output").c_str());
+    outputFile->precision(15);
+  }
+
+  ~Exercice3()
+  {
+    outputFile->close();
+    delete outputFile;
+  };
+
+  void run()
+  {
+    t = 0.e0;
+	
+	if (mjup==0){
+		Om=0;
+		xs=0;
+		y[0]=2.0*a;
+		y[1]=0.0;
+		y[2]=-11000; 
+		y[3]=2000;
+	}else{
+		Om = sqrt(GM *  (msol+mjup) / pow(a,3));
+		xs = -a*alpha;
+		xj = a*beta;
+		y[0]=2.0*a+xs;
+		y[1]=0.0;
+		y[2]=-11000 - Om * y[1]; //??????????????
+		y[3]=2000 + Om * y[0];	//?????????????
+		
+	
+	}    
             if (adapt) {
                 *outputFile << " " << dt;  // ajouter dt en dernière colonne
             }
