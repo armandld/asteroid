@@ -263,11 +263,46 @@ plt.xlabel("nsteps")
 plt.ylabel("$\\Delta E$ [J]")
 plt.grid(True, linestyle="--", alpha=0.3)
 plt.legend()
-plt.title("Convergence énergie")
+plt.title("Convergence énergie, schéma adaptatif")
 
+ecrire_valeur("adapt",0)
+nsteps = [1e3,3e3,1e4,2e4,1e5,2e5] # Nombre de pas par période
+
+paramstr = 'nsteps'  # Paramètre à scanner
+param = nsteps
+
+l = []
+K = []
+plt.figure()
+ax = plt.gca()
+for i, nstep in enumerate(param):
+    output_file = f"{paramstr}={nstep}.out"
+    outputs.append(output_file)
+    cmd = f"./{executable} {input_filename} {paramstr}={nstep} output={output_file}"
+    print(cmd)
+    subprocess.run(cmd, shell=True)
+    print('Simulation terminée.')
+
+    # Chargement des données
+    data = np.loadtxt(output_file)
+    t = data[:, 0]
+    E = data[:, 5]
+    Emin = np.min(E)
+    Emax = np.max(E)
+    coul = "blue"
+    q = '-'
+    K.append(Emax-Emin)
+    # Solution analytique
+# Tracé de l'étude de convergence
+plt.loglog(nsteps, K,color = coul,linestyle=q)
+plt.xlabel("nsteps")
+plt.ylabel("$\\Delta E$ [J]")
+plt.grid(True, linestyle="--", alpha=0.3)
+plt.legend()
+plt.title("Convergence énergie, schéma fixe")
 
 tol=[1e2, 1e1, 1e0, 1e-1,1e-2]  # Nombre de pas par période
-
+'''
 l = []
 K = []
 j = []
@@ -305,5 +340,5 @@ plt.ylabel("$\\Delta x$ [J]")
 plt.grid(True, linestyle="--", alpha=0.3)
 plt.legend()
 plt.title("Convergence position finale")
-
+'''
 plt.show()
