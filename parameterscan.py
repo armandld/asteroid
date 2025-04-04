@@ -56,8 +56,8 @@ def ecrire_configuration(nouvelles_valeurs):
 
 
 tFin = 3153600000
-msol = 1.98892e30
-mjup = 0
+m1 = 1.98892e30
+m2 = 0
 msat = 1
 a = 778.479e9
 adapt = 1
@@ -69,10 +69,10 @@ nsel_physics = 1
 valeurs = lire_configuration()
 
 def actualise_valeur():
-    global tFin, msol, mjup, msat, a, adapt, tol, nsteps, sampling, nsel_physics
+    global tFin, m1, m2, msat, a, adapt, tol, nsteps, sampling, nsel_physics
     tFin = float(valeurs.get("tFin"))
-    msol = float(valeurs.get("msol"))
-    mjup = float(valeurs.get("mjup"))
+    m1 = float(valeurs.get("m1"))
+    m2 = float(valeurs.get("m2"))
     msat = float(valeurs.get("msat"))
     a = float(valeurs.get("a"))
     adapt = bool(valeurs.get("adapt"))
@@ -105,7 +105,7 @@ param = adapt
 #ecrire_valeur("mjup",0)
 #ecrire_valeur("tol",1e4)
 
-xjup = a*msol/(msol-mjup)
+xjup = a*m1/(m1-m2)
 xsol = a - xjup
 
 l = []
@@ -184,7 +184,7 @@ plt.title("Pas de temps en fonction du temps")
 plt.legend()
 
 
-adapt = [1e4,3e4,1e5,3e5]  # Nombre de pas par période
+
 adapt = [0,1]
 paramstr = 'adapt'  # Paramètre à scanner
 param = adapt
@@ -222,6 +222,47 @@ for i, adapt in enumerate(param):
 # Tracé de l'étude de convergence
 plt.xlabel("t [s]")
 plt.ylabel("E [J]")
+plt.grid(True, linestyle="--", alpha=0.3)
+plt.legend()
+plt.title("Énergie")
+
+
+ecrire_valeur("adapt",1)
+tol = [10,1e-1,1e-2,1e-3]  # Nombre de pas par période
+
+paramstr = 'tol'  # Paramètre à scanner
+param = tol
+
+l = []
+K = []
+j = []
+plt.figure()
+ax = plt.gca()
+for i, tol0 in enumerate(param):
+    output_file = f"{paramstr}={tol0}.out"
+    outputs.append(output_file)
+    cmd = f"./{executable} {input_filename} {paramstr}={tol0} output={output_file}"
+    print(cmd)
+    subprocess.run(cmd, shell=True)
+    print('Simulation terminée.')
+
+    # Chargement des données
+    data = np.loadtxt(output_file)
+    t = data[:, 0]
+    E = data[:, 5]
+    Emin = np.min(E)
+    Emax = np.max(E)
+    coul = "blue"
+    q = '-'
+    if (adapt == True):
+        coul = "red"
+    K.append(Emax-Emin)
+    j.append(len(t))
+    # Solution analytique
+# Tracé de l'étude de convergence
+plt.plot(j, K,color = coul,linestyle=q)
+plt.xlabel("nsteps")
+plt.ylabel("$\\Delta E$ [J]")
 plt.grid(True, linestyle="--", alpha=0.3)
 plt.legend()
 plt.title("Énergie")
